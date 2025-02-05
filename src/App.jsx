@@ -1,98 +1,117 @@
-import './App.css'
-import { useState, useEffect } from "react";
-import TaskList from "./components/TaskList";
-import TaskForm from "./components/TaskForm";
-import Modal from "./components/Modal";
+import "./App.css"
+import { useState, useEffect, useMemo } from "react"
+import TaskList from "./components/TaskList"
+import TaskForm from "./components/TaskForm"
+import Modal from "./components/Modal"
+import { Plus } from "lucide-react"
+import StatusModal from "./components/StatusModal"
+import DeleteModal from "./components/DeleteModal"
 
 const App = () => {
-  // Cargar tareas desde localStorage al inicializar
   const [tasks, setTasks] = useState(() => {
-    const storedTasks = localStorage.getItem("tasks");
-    return storedTasks ? JSON.parse(storedTasks) : [];
-  });
+    const storedTasks = localStorage.getItem("tasks")
+    return storedTasks ? JSON.parse(storedTasks) : []
+  })
 
-  const [filter, setFilter] = useState("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [filter, setFilter] = useState("all")
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [selectedTask, setSelectedTask] = useState(null)
 
-  // Sincronizar tareas con localStorage
   useEffect(() => {
-    if (tasks.length > 0) {
-      localStorage.setItem("tasks", JSON.stringify(tasks));
-    }
-  }, [tasks]);
+    localStorage.setItem("tasks", JSON.stringify(tasks))
+  }, [tasks])
 
   const addTask = (task) => {
-    setTasks([...tasks, task]);
-  };
+    setTasks([...tasks, task])
+    setIsAddModalOpen(false)
+  }
 
   const updateTask = (updatedTask) => {
-    setTasks(tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)));
-  };
+    setTasks(tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)))
+    setIsEditModalOpen(false)
+  }
 
   const deleteTask = (id) => {
-    const newTasks = tasks.filter((task) => task.id !== id);
-    setTasks(newTasks);
-    if (newTasks.length === 0) {
-      localStorage.removeItem("tasks"); // Si ya no hay tareas, limpiamos localStorage
-    }
-  };
+    setTasks(tasks.filter((task) => task.id !== id))
+    setIsDeleteModalOpen(false)
+  }
 
   const toggleTaskStatus = (id) => {
-    setTasks(tasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task)));
-  };
+    setTasks(tasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task)))
+  }
 
-  const filteredTasks = tasks.filter((task) => {
-    if (filter === "completed") return task.completed;
-    if (filter === "pending") return !task.completed;
-    return true;
-  });
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (filter === "completed") return task.completed
+      if (filter === "pending") return !task.completed
+      return true
+    })
+  }, [tasks, filter])
 
   return (
     <div className="flex justify-center p-6 min-h-screen bg-pink-100">
-      <div className="bg-white justify-center p-6 rounded-lg shadow-lg w-full max-w-2xl">
-        <h1 className="flex justify-center text-3xl text-[#d59f9f] font-bold mb-8">Gestor de tareas</h1>
-        <div className="flex justify-center items-center space-x-4 mb-6">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+        <h1 className="mt-4 text-4xl text-[#d59f9f] font-bold mb-8 text-center">Gestor de tareas</h1>
+        <div className="flex justify-between items-center mb-6">
           <button
-            onClick={() => {
-              setSelectedTask(null);
-              setIsModalOpen(true);
-            }}
-            className="bg-[#a5a5a5] text-white px-4 py-2 rounded-xl font-medium"
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-[#d59f9f] text-white p-2 rounded-full hover:bg-[#c48e8e] transition-colors"
           >
-            Agregar tarea
+            <Plus size={24} />
           </button>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="p-2 border rounded-xl"
-          >
-            <option className="text-neutral-500 font-medium" value="all">Todas</option>
-            <option className="text-neutral-500 font-medium" value="pending">Pendientes</option>
-            <option className="text-neutral-500 font-medium" value="completed">Completadas</option>
-          </select>
+          <div className="flex items-center">
+            <p className="font-medium mr-3 text-gray-500">Filtrar por: </p>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="p-2 border rounded-xl bg-white text-[#d59f9f] border-[#d59f9f] focus:outline-none focus:ring-2 focus:ring-[#d59f9f]"
+            >
+              <option value="all">Todas</option>
+              <option value="pending">Pendientes</option>
+              <option value="completed">Completadas</option>
+            </select>
+          </div>
         </div>
         <TaskList
           tasks={filteredTasks}
           onToggleStatus={toggleTaskStatus}
           onEditTask={(task) => {
-            setSelectedTask(task);
-            setIsModalOpen(true);
+            setSelectedTask(task)
+            setIsEditModalOpen(true)
           }}
-          onDeleteTask={deleteTask}
+          onDeleteTask={(task) => {
+            setSelectedTask(task)
+            setIsDeleteModalOpen(true)
+          }}
+          onShowStatus={(task) => {
+            setSelectedTask(task)
+            setIsStatusModalOpen(true)
+          }}
         />
-        {isModalOpen && (
-          <Modal onClose={() => setIsModalOpen(false)}>
-            <TaskForm
-              onSubmit={selectedTask ? updateTask : addTask}
-              task={selectedTask}
-              onClose={() => setIsModalOpen(false)}
-            />
+        {isAddModalOpen && (
+          <Modal onClose={() => setIsAddModalOpen(false)}>
+            <TaskForm onSubmit={addTask} onClose={() => setIsAddModalOpen(false)} />
           </Modal>
+        )}
+        {isEditModalOpen && (
+          <Modal onClose={() => setIsEditModalOpen(false)}>
+            <TaskForm onSubmit={updateTask} task={selectedTask} onClose={() => setIsEditModalOpen(false)} />
+          </Modal>
+        )}
+        {isStatusModalOpen && <StatusModal task={selectedTask} onClose={() => setIsStatusModalOpen(false)} />}
+        {isDeleteModalOpen && (
+          <DeleteModal
+            task={selectedTask}
+            onConfirm={() => deleteTask(selectedTask.id)}
+            onCancel={() => setIsDeleteModalOpen(false)}
+          />
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
 export default App;

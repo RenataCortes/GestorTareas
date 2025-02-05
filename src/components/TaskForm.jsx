@@ -1,57 +1,70 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"
 
 const TaskForm = ({ onSubmit, task, onClose }) => {
-    const [name, setName] = useState(task ? task.name : "");
-    const [description, setDescription] = useState(task ? task.description : "");
-    const [error, setError] = useState("");
+    const [name, setName] = useState(task ? task.name : "")
+    const [description, setDescription] = useState(task ? task.description : "")
+    const [error, setError] = useState("")
+
+    useEffect(() => {
+        if (task) {
+            setName(task.name)
+            setDescription(task.description)
+        }
+    }, [task])
 
     const handleSubmit = (e) => {
-        e.preventDefault();
-        // Validar que el campo name no esté vacío
+        e.preventDefault()
         if (!name.trim()) {
-            setError("El nombre de la tarea es obligatorio");
-            return;
+            setError("El nombre de la tarea es obligatorio")
+            return
         }
 
-        setError(""); // Limpiar mensaje de error
-        onSubmit({
+        setError("")
+        const updatedTask = {
             id: task ? task.id : Date.now(),
             name,
             description,
             completed: task ? task.completed : false,
-        });
-        onClose();
-    };
+        }
+        onSubmit(updatedTask)
+    }
 
     return (
-        <form onSubmit={handleSubmit} className="p-6 max-w-sm mx-auto">
-            <h2 className="text-2xl font-bold mb-6 text-center">{task ? "Editar tarea" : "Agregar tarea"}</h2>
-
-            {error && <p className="text-red-500 text-center mb-4">{error}</p>} {/* Mostrar error */}
-
-            <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nombre de la tarea"
-                className="w-full p-2 border rounded mb-4"
-            />
-            <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Descripción"
-                className="w-full p-2 border rounded mb-4"
-            />
-            <div className="flex justify-center space-x-2">
-                <button type="submit" className="bg-[#d59f9f] text-white font-medium px-4 py-2 rounded">
-                    {task ? "Actualizar" : "Agregar"}
-                </button>
-                <button type="button" onClick={onClose} className="bg-[#a5a5a5] text-white font-medium px-4 py-2 rounded">
-                    Cancelar
-                </button>
+        <form onSubmit={handleSubmit} className="w-full max-w-md">
+            <div className="p-6">
+                <h2 className="text-2xl text-center font-bold text-[#d59f9f] mb-6">{task ? "Editar tarea" : "Agregar tarea"}</h2>
+                {error && <p className="text-red-500 mb-4">{error}</p>}
+                <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Nombre de la tarea"
+                    className="w-full p-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#d59f9f]"
+                />
+                <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Descripción"
+                    className="w-full p-2 mb-6 border rounded focus:outline-none focus:ring-2 focus:ring-[#d59f9f]"
+                />
+                <div className="flex justify-center space-x-2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-4 py-2 bg-[#d2d2d2] font-medium text-neutral-700 rounded hover:bg-[#acacac] transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        className="px-4 py-2 bg-[#d59f9f] text-white rounded hover:bg-[#c48e8e] transition-colors"
+                    >
+                        {task ? "Actualizar" : "Agregar"}
+                    </button>
+                </div>
             </div>
         </form>
-    );
-};
+    )
+}
 
 export default TaskForm;
